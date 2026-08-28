@@ -8,6 +8,7 @@ class LLMProvider(str, Enum):
 class Settings(BaseSettings):
     LLM_PROVIDER: LLMProvider = LLMProvider.ANTHROPIC
     ANTHROPIC_API_KEY: str = ""
+    FRONTEND_URL: str = ""
     OLLAMA_BASE_URL: str = "http://ollama:11434"
     OLLAMA_MODEL: str = "llama3.2:3b"
     ANTHROPIC_MODEL: str = "claude-sonnet-4-6"

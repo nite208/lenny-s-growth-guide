@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from models.schemas import ChatRequest, ChatResponse
-from services.llm_service import llm_service
+from services.llm_service import llm_service, LLMServiceError
 from services.rag_service import rag_service
 from services.essay_service import generate_essay
 from db.supabase_client import save_message, get_session_history
@@ -19,8 +19,19 @@ RULES:
 @router.post("/", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     session_id = req.session_id or str(uuid.uuid4())
+    insufficient_context_message = "I don't have enough information in Lenny's transcripts to answer this"
     try:
         chunks = rag_service.retrieve(req.message)
+        if len(chunks) == 0:
+            await save_message(session_id, "user", req.message)
+            await save_message(session_id, "assistant", insufficient_context_message)
+            return ChatResponse(
+                session_id=session_id,
+                message=insufficient_context_message,
+                sources=[],
+                artifact=None,
+                provider=llm_service.get_provider_name(),
+            )
         context = rag_service.format_context(chunks)
         history = await get_session_history(session_id)
         if req.mode == "essay":
@@ -37,6 +48,9 @@ async def chat(req: ChatRequest):
         await save_message(session_id, "user", req.message)
         await save_message(session_id, "assistant", response_text)
         return ChatResponse(session_id=session_id, message=response_text, sources=[c["source"] for c in chunks], artifact=artifact, provider=llm_service.get_provider_name())
+    except LLMServiceError as e:
+        log.error("chat_llm_error", code=e.code, error=e.user_message)
+        raise HTTPException(status_code=503, detail=e.user_message)
     except Exception as e:
         log.error("chat_error", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))

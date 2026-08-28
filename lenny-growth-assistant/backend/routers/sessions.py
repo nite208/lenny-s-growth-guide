@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from models.schemas import SessionCreate
-from db.supabase_client import supabase
+from db.supabase_client import create_session_record, list_session_records, list_session_messages
 import uuid
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
@@ -8,13 +8,12 @@ router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 @router.post("/")
 def create_session(body: SessionCreate):
     sid = str(uuid.uuid4())
-    supabase.table("sessions").insert({"id": sid, "title": body.title}).execute()
-    return {"session_id": sid, "title": body.title}
+    return create_session_record(sid, body.title)
 
 @router.get("/")
 def list_sessions():
-    return supabase.table("sessions").select("*").order("created_at", desc=True).limit(20).execute().data
+    return list_session_records(limit=20)
 
 @router.get("/{session_id}/messages")
 def get_messages(session_id: str):
-    return supabase.table("messages").select("*").eq("session_id", session_id).order("created_at").execute().data
+    return list_session_messages(session_id)

@@ -5,7 +5,11 @@ import { sendMessage } from "../api/client"
 
 const MODES = [{id:"chat",label:"💬 Chat"},{id:"essay",label:"✍️ Essay"},{id:"artifact",label:"📄 Artifact"}]
 
-export default function ChatPane({ sessionId, setSessionId, setArtifact }) {
+function Dot({ ok }) {
+  return <span className={`inline-block w-2 h-2 rounded-full ${ok ? "bg-green-400" : "bg-red-400"}`} />
+}
+
+export default function ChatPane({ sessionId, setSessionId, setArtifact, health }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState("")
   const [mode, setMode] = useState("chat")
@@ -28,15 +32,23 @@ export default function ChatPane({ sessionId, setSessionId, setArtifact }) {
       setMessages(p => [...p, { role: "assistant", content: res.message, sources: res.sources }])
       if (res.artifact) setArtifact(res.artifact)
     } catch (e) {
-      setMessages(p => [...p, { role: "assistant", content: "Error: " + e.message, sources: [] }])
+      const msg = e?.message === "Failed to fetch" ? "Backend unreachable" : e.message
+      setMessages(p => [...p, { role: "assistant", content: msg, sources: [] }])
     } finally { setLoading(false) }
   }
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-        <h1 className="font-semibold text-sm">🎙️ Lenny Growth Assistant</h1>
-        <ModelBadge provider={provider} />
+        <div>
+          <h1 className="font-semibold text-sm">🎙️ Lenny Growth Assistant</h1>
+          <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-400">
+            <span className="inline-flex items-center gap-1"><Dot ok={Boolean(health?.llm_connected)} /> LLM</span>
+            <span className="inline-flex items-center gap-1"><Dot ok={Boolean(health?.chroma_docs > 0)} /> Chroma</span>
+            <span className="inline-flex items-center gap-1"><Dot ok={Boolean(health?.db_connected)} /> DB</span>
+          </div>
+        </div>
+        <ModelBadge provider={provider || health?.provider} />
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {messages.length === 0 && (
