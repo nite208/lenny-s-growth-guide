@@ -1,17 +1,17 @@
-import { Component } from "react"
+import { Component } from "react";
 
 export default class AppErrorBoundary extends Component {
   constructor(props) {
-    super(props)
-    this.state = { hasError: false }
+    super(props);
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError() {
-    return { hasError: true }
+    return { hasError: true };
   }
 
   componentDidCatch(error) {
-    console.error("frontend_error_boundary", error)
+    console.error("frontend_error_boundary", error);
   }
 
   render() {
@@ -21,13 +21,14 @@ export default class AppErrorBoundary extends Component {
           <div className="max-w-md text-center">
             <h1 className="text-lg font-semibold mb-2">Backend unreachable</h1>
             <p className="text-sm text-gray-400">
-              We couldn&apos;t connect to The Lenny Growth Assistant backend. Check that the API is running and refresh.
+              We couldn&apos;t connect to The Lenny Growth Assistant backend. Check that the API is
+              running and refresh.
             </p>
           </div>
         </div>
-      )
+      );
     }
 
-    return this.props.children
+    return this.props.children;
   }
 }
